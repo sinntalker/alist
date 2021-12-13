@@ -1,6 +1,4 @@
-<p align="center">
-    <img src="https://img.oez.cc/2020/12/24/1fb16bc25a4f6.png" alt="AList Logo" width=200/>
-</p>
+<h1 align="center">Alist</h1>
 <p align="center">
   <a href="https://github.com/Xhofe/alist/releases"><img src="https://img.shields.io/github/release/Xhofe/alist?style=flat-square" alt="Release version"></a>
   <a href="https://github.com/Xhofe/alist/actions?query=workflow%3ABuild"><img src="https://img.shields.io/github/workflow/status/Xhofe/alist/build?style=flat-square" alt="Build status"></a>
@@ -12,6 +10,8 @@
 </p>
 
 ---
+
+> 此版本不再维护，请使用新版：https://github.com/Xhofe/alist 。
 
 ### 这是什么？
 
@@ -29,7 +29,7 @@
 
 ### 预览
 
-<a href="https://alist.nn.ci/"><img src="https://img.oez.cc/2020/12/24/d81d2dab3e5f0.png"></a>
+<a href="https://alist.nn.ci/"><img src="https://mapp.alicdn.com/16394069004977ru9tHculPbGoNP.png"></a>
 
 ### 支持的功能
 
@@ -39,6 +39,7 @@
 - `Readme`渲染
 - 自定义根目录
 - 文件直链下载
+- 多账号
 - …
 
 #### TODO
@@ -50,9 +51,9 @@
   - [x] 音频
 - [x] `Readme`渲染
 - [x] 密码加密
-- [ ] 搜索与翻页
+- [x] 搜索与翻页
 - [x] 文件直链
-- [ ] 路径优化
+- [x] 路径优化
 - [x] 缓存
 
 ### 如何使用
