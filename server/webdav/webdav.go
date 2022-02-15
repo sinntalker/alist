@@ -46,7 +46,7 @@ func (h *Handler) stripPrefix(p string) (string, int, error) {
 func isPathExist(ctx context.Context, fs *FileSystem, path string) (bool, FileInfo) {
 	file, err := fs.File(path)
 	if err != nil {
-		log.Debug(path, err)
+		log.Debugln(path, err)
 		return false, nil
 	}
 	return true, file
@@ -237,11 +237,14 @@ func (h *Handler) handleGetHeadPost(w http.ResponseWriter, r *http.Request, fs *
 	}
 	w.Header().Set("ETag", etag)
 	log.Debugf("url: %+v", r.URL)
-	link, err := fs.Link(r, reqPath)
+	link, err := fs.Link(w, r, reqPath)
+	log.Debugf("webdav link error: %s", err.Error())
 	if err != nil {
 		return http.StatusInternalServerError, err
 	}
-	http.Redirect(w, r, link, 302)
+	if link != "" {
+		http.Redirect(w, r, link, 302)
+	}
 	return 0, nil
 }
 

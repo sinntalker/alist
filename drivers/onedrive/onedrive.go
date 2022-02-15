@@ -19,8 +19,6 @@ import (
 	"time"
 )
 
-var oneClient = resty.New()
-
 type Host struct {
 	Oauth string
 	Api   string
@@ -47,7 +45,7 @@ var onedriveHostMap = map[string]Host{
 
 func (driver Onedrive) GetMetaUrl(account *model.Account, auth bool, path string) string {
 	path = filepath.Join(account.RootFolder, path)
-	log.Debugf(path)
+	//log.Debugf(path)
 	host, _ := onedriveHostMap[account.Zone]
 	if auth {
 		return host.Oauth
@@ -81,7 +79,7 @@ type OneTokenErr struct {
 
 func (driver Onedrive) RefreshToken(account *model.Account) error {
 	err := driver.refreshToken(account)
-	if err != nil && err.Error() == "empty refresh_token" {
+	if err != nil && err == base.ErrEmptyToken {
 		return driver.refreshToken(account)
 	}
 	return err
@@ -91,7 +89,7 @@ func (driver Onedrive) refreshToken(account *model.Account) error {
 	url := driver.GetMetaUrl(account, true, "") + "/common/oauth2/v2.0/token"
 	var resp base.TokenResp
 	var e OneTokenErr
-	_, err := oneClient.R().SetResult(&resp).SetError(&e).SetFormData(map[string]string{
+	_, err := base.RestyClient.R().SetResult(&resp).SetError(&e).SetFormData(map[string]string{
 		"grant_type":    "refresh_token",
 		"client_id":     account.ClientId,
 		"client_secret": account.ClientSecret,
@@ -109,8 +107,8 @@ func (driver Onedrive) refreshToken(account *model.Account) error {
 		account.Status = "work"
 	}
 	if resp.RefreshToken == "" {
-		account.Status = "empty refresh_token"
-		return errors.New("empty refresh_token")
+		account.Status = base.ErrEmptyToken.Error()
+		return base.ErrEmptyToken
 	}
 	account.RefreshToken, account.AccessToken = resp.RefreshToken, resp.AccessToken
 	return nil
@@ -178,16 +176,17 @@ func (driver Onedrive) GetFiles(account *model.Account, path string) ([]OneFile,
 	}
 	for nextLink != "" {
 		var files OneFiles
-		var e OneRespErr
-		_, err := oneClient.R().SetResult(&files).SetError(&e).
-			SetHeader("Authorization", "Bearer  "+account.AccessToken).
-			Get(nextLink)
+		_, err := driver.Request(nextLink, base.Get, nil, nil, nil, nil, &files, account)
+		//var e OneRespErr
+		//_, err := oneClient.R().SetResult(&files).SetError(&e).
+		//	SetHeader("Authorization", "Bearer  "+account.AccessToken).
+		//	Get(nextLink)
 		if err != nil {
 			return nil, err
 		}
-		if e.Error.Code != "" {
-			return nil, fmt.Errorf("%s", e.Error.Message)
-		}
+		//if e.Error.Code != "" {
+		//	return nil, fmt.Errorf("%s", e.Error.Message)
+		//}
 		res = append(res, files.Value...)
 		nextLink = files.NextLink
 	}
@@ -196,16 +195,18 @@ func (driver Onedrive) GetFiles(account *model.Account, path string) ([]OneFile,
 
 func (driver Onedrive) GetFile(account *model.Account, path string) (*OneFile, error) {
 	var file OneFile
-	var e OneRespErr
-	_, err := oneClient.R().SetResult(&file).SetError(&e).
-		SetHeader("Authorization", "Bearer  "+account.AccessToken).
-		Get(driver.GetMetaUrl(account, false, path))
+	//var e OneRespErr
+	u := driver.GetMetaUrl(account, false, path)
+	_, err := driver.Request(u, base.Get, nil, nil, nil, nil, &file, account)
+	//_, err := oneClient.R().SetResult(&file).SetError(&e).
+	//	SetHeader("Authorization", "Bearer  "+account.AccessToken).
+	//	Get(driver.GetMetaUrl(account, false, path))
 	if err != nil {
 		return nil, err
 	}
-	if e.Error.Code != "" {
-		return nil, fmt.Errorf("%s", e.Error.Message)
-	}
+	//if e.Error.Code != "" {
+	//	return nil, fmt.Errorf("%s", e.Error.Message)
+	//}
 	return &file, nil
 }
 
@@ -252,7 +253,7 @@ func (driver Onedrive) Request(url string, method int, headers, query, form map[
 	if err != nil {
 		return nil, err
 	}
-	log.Debug(res.String())
+	//log.Debug(res.String())
 	if e.Error.Code != "" {
 		if e.Error.Code == "InvalidAuthenticationToken" {
 			err = driver.RefreshToken(account)
@@ -314,5 +315,4 @@ func (driver Onedrive) UploadBig(file *model.FileStream, account *model.Account)
 
 func init() {
 	base.RegisterDriver(&Onedrive{})
-	oneClient.SetRetryCount(3)
 }

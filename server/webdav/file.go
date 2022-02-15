@@ -24,8 +24,13 @@ import (
 
 type FileSystem struct{}
 
+var upFileMap = make(map[string]*model.File)
+
 func (fs *FileSystem) File(rawPath string) (*model.File, error) {
 	rawPath = utils.ParsePath(rawPath)
+	if f, ok := upFileMap[rawPath]; ok {
+		return f, nil
+	}
 	if model.AccountsCount() > 1 && rawPath == "/" {
 		now := time.Now()
 		return &model.File{
@@ -45,18 +50,17 @@ func (fs *FileSystem) File(rawPath string) (*model.File, error) {
 
 func (fs *FileSystem) Files(ctx context.Context, rawPath string) ([]model.File, error) {
 	rawPath = utils.ParsePath(rawPath)
+	var files []model.File
+	var err error
 	if model.AccountsCount() > 1 && rawPath == "/" {
-		files, err := model.GetAccountFiles()
+		files, err = model.GetAccountFiles()
+	} else {
+		account, path_, driver, err := common.ParsePath(rawPath)
 		if err != nil {
 			return nil, err
 		}
-		return files, nil
+		files, err = operate.Files(driver, account, path_)
 	}
-	account, path_, driver, err := common.ParsePath(rawPath)
-	if err != nil {
-		return nil, err
-	}
-	files, err := operate.Files(driver, account, path_)
 	if err != nil {
 		return nil, err
 	}
@@ -91,7 +95,7 @@ func ClientIP(r *http.Request) string {
 	return ""
 }
 
-func (fs *FileSystem) Link(r *http.Request, rawPath string) (string, error) {
+func (fs *FileSystem) Link(w http.ResponseWriter, r *http.Request, rawPath string) (string, error) {
 	rawPath = utils.ParsePath(rawPath)
 	log.Debugf("get link path: %s", rawPath)
 	if model.AccountsCount() > 1 && rawPath == "/" {
@@ -105,6 +109,19 @@ func (fs *FileSystem) Link(r *http.Request, rawPath string) (string, error) {
 	protocol := "http"
 	if r.TLS != nil {
 		protocol = "https"
+	}
+	// 直接返回
+	if account.WebdavDirect {
+		file, err := fs.File(rawPath)
+		if err != nil {
+			return "", err
+		}
+		link_, err := driver.Link(base.Args{Path: path_}, account)
+		if err != nil {
+			return "", err
+		}
+		err = common.Proxy(w, r, link_, file)
+		return "", err
 	}
 	if driver.Config().OnlyProxy || account.WebdavProxy {
 		link = fmt.Sprintf("%s://%s/p%s", protocol, r.Host, rawPath)
@@ -154,6 +171,17 @@ func (fs *FileSystem) Upload(ctx context.Context, r *http.Request, rawPath strin
 	//	return err
 	//}
 	filePath, fileName := filepath.Split(path_)
+	now := time.Now()
+	if fileSize == 0 {
+		upFileMap[rawPath] = &model.File{
+			Name:      fileName,
+			Size:      0,
+			UpdatedAt: &now,
+		}
+		return nil
+	} else {
+		delete(upFileMap, rawPath)
+	}
 	fileData := model.FileStream{
 		MIMEType:   r.Header.Get("Content-Type"),
 		File:       r.Body,

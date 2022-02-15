@@ -21,28 +21,28 @@ func InitConf() {
 		if !utils.WriteToJson(conf.ConfigFile, conf.Conf) {
 			log.Fatalf("failed to create default config file")
 		}
-		return
+	} else {
+		config, err := ioutil.ReadFile(conf.ConfigFile)
+		if err != nil {
+			log.Fatalf("reading config file error:%s", err.Error())
+		}
+		conf.Conf = new(conf.Config)
+		err = utils.Json.Unmarshal(config, conf.Conf)
+		if err != nil {
+			log.Fatalf("load config error: %s", err.Error())
+		}
+		log.Debugf("config:%+v", conf.Conf)
+		// update config.json struct
+		confBody, err := utils.Json.MarshalIndent(conf.Conf, "", "  ")
+		if err != nil {
+			log.Fatalf("marshal config error:%s", err.Error())
+		}
+		err = ioutil.WriteFile(conf.ConfigFile, confBody, 0777)
+		if err != nil {
+			log.Fatalf("update config struct error: %s", err.Error())
+		}
 	}
-	config, err := ioutil.ReadFile(conf.ConfigFile)
-	if err != nil {
-		log.Fatalf("reading config file error:%s", err.Error())
-	}
-	conf.Conf = new(conf.Config)
-	err = utils.Json.Unmarshal(config, conf.Conf)
-	if err != nil {
-		log.Fatalf("load config error: %s", err.Error())
-	}
-	log.Debugf("config:%+v", conf.Conf)
-	// update config.json struct
-	confBody, err := utils.Json.MarshalIndent(conf.Conf, "", "  ")
-	if err != nil {
-		log.Fatalf("marshal config error:%s", err.Error())
-	}
-	err = ioutil.WriteFile(conf.ConfigFile, confBody, 0777)
-	if err != nil {
-		log.Fatalf("update config struct error: %s", err.Error())
-	}
-	err = os.MkdirAll("data/temp", 0700)
+	err := os.MkdirAll(conf.Conf.TempDir, 0700)
 	if err != nil {
 		log.Fatalf("create temp dir error: %s", err.Error())
 	}

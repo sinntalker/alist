@@ -6,7 +6,6 @@ import (
 	"github.com/Xhofe/alist/drivers/base"
 	"github.com/Xhofe/alist/model"
 	"github.com/Xhofe/alist/utils"
-	"github.com/gin-gonic/gin"
 	log "github.com/sirupsen/logrus"
 	"io"
 	"io/ioutil"
@@ -133,7 +132,7 @@ func (driver Native) Link(args base.Args, account *model.Account) (*base.Link, e
 		return nil, base.ErrNotFile
 	}
 	link := base.Link{
-		Url: fullPath,
+		FilePath: fullPath,
 	}
 	return &link, nil
 }
@@ -156,9 +155,9 @@ func (driver Native) Path(path string, account *model.Account) (*model.File, []m
 	return nil, files, nil
 }
 
-func (driver Native) Proxy(c *gin.Context, account *model.Account) {
-	// unnecessary
-}
+//func (driver Native) Proxy(r *http.Request, account *model.Account) {
+//	// unnecessary
+//}
 
 func (driver Native) Preview(path string, account *model.Account) (interface{}, error) {
 	return nil, base.ErrNotSupport

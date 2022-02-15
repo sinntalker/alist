@@ -30,13 +30,15 @@ type Config struct {
 	Database Database    `json:"database"`
 	Scheme   Scheme      `json:"scheme"`
 	Cache    CacheConfig `json:"cache"`
+	TempDir  string      `json:"temp_dir"`
 }
 
 func DefaultConfig() *Config {
 	return &Config{
 		Address: "0.0.0.0",
 		Port:    5244,
-		Assets:  "zhimg",
+		Assets:  "jsdelivr",
+		TempDir: "data/temp",
 		Database: Database{
 			Type:        "sqlite3",
 			Port:        0,

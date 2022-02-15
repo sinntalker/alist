@@ -6,8 +6,6 @@ import (
 	"github.com/Xhofe/alist/drivers/base"
 	"github.com/Xhofe/alist/model"
 	"github.com/Xhofe/alist/utils"
-	"github.com/gin-gonic/gin"
-	"github.com/robfig/cron/v3"
 	log "github.com/sirupsen/logrus"
 	"path/filepath"
 )
@@ -92,9 +90,9 @@ func (driver Onedrive) Items() []base.Item {
 }
 
 func (driver Onedrive) Save(account *model.Account, old *model.Account) error {
-	if old != nil {
-		conf.Cron.Remove(cron.EntryID(old.CronId))
-	}
+	//if old != nil {
+	//	conf.Cron.Remove(cron.EntryID(old.CronId))
+	//}
 	if account == nil {
 		return nil
 	}
@@ -104,28 +102,25 @@ func (driver Onedrive) Save(account *model.Account, old *model.Account) error {
 	}
 	account.RootFolder = utils.ParsePath(account.RootFolder)
 	err := driver.RefreshToken(account)
+	_ = model.SaveAccount(account)
 	if err != nil {
 		return err
 	}
-	cronId, err := conf.Cron.AddFunc("@every 1h", func() {
-		name := account.Name
-		log.Debugf("onedrive account name: %s", name)
-		newAccount, ok := model.GetAccount(name)
-		log.Debugf("onedrive account: %+v", newAccount)
-		if !ok {
-			return
-		}
-		err = driver.RefreshToken(&newAccount)
-		_ = model.SaveAccount(&newAccount)
-	})
-	if err != nil {
-		return err
-	}
-	account.CronId = int(cronId)
-	err = model.SaveAccount(account)
-	if err != nil {
-		return err
-	}
+	//cronId, err := conf.Cron.AddFunc("@every 1h", func() {
+	//	name := account.Name
+	//	log.Debugf("onedrive account name: %s", name)
+	//	newAccount, ok := model.GetAccount(name)
+	//	log.Debugf("onedrive account: %+v", newAccount)
+	//	if !ok {
+	//		return
+	//	}
+	//	err = driver.RefreshToken(&newAccount)
+	//	_ = model.SaveAccount(&newAccount)
+	//})
+	//if err != nil {
+	//	return err
+	//}
+	//account.CronId = int(cronId)
 	return nil
 }
 
@@ -205,9 +200,9 @@ func (driver Onedrive) Path(path string, account *model.Account) (*model.File, [
 	return nil, files, nil
 }
 
-func (driver Onedrive) Proxy(c *gin.Context, account *model.Account) {
-	c.Request.Header.Del("Origin")
-}
+//func (driver Onedrive) Proxy(r *http.Request, account *model.Account) {
+//	r.Header.Del("Origin")
+//}
 
 func (driver Onedrive) Preview(path string, account *model.Account) (interface{}, error) {
 	return nil, base.ErrNotSupport

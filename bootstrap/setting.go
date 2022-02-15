@@ -3,6 +3,7 @@ package bootstrap
 import (
 	"github.com/Xhofe/alist/conf"
 	"github.com/Xhofe/alist/model"
+	"github.com/Xhofe/alist/utils"
 	log "github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 	"strings"
@@ -27,7 +28,7 @@ func InitSettings() {
 		},
 		{
 			Key:         "password",
-			Value:       "alist",
+			Value:       utils.RandomStr(8),
 			Description: "password",
 			Type:        "string",
 			Access:      model.PRIVATE,
@@ -35,7 +36,7 @@ func InitSettings() {
 		},
 		{
 			Key:         "logo",
-			Value:       "https://store.heytapimage.com/cdo-portal/feedback/202112/05/1542f45f86b8609495b69c5380753135.png",
+			Value:       "https://cdn.jsdelivr.net/gh/alist-org/logo@main/can_circle.svg",
 			Description: "logo",
 			Type:        "string",
 			Access:      model.PUBLIC,
@@ -43,7 +44,7 @@ func InitSettings() {
 		},
 		{
 			Key:         "favicon",
-			Value:       "https://store.heytapimage.com/cdo-portal/feedback/202112/05/1542f45f86b8609495b69c5380753135.png",
+			Value:       "https://cdn.jsdelivr.net/gh/alist-org/logo@main/logo.svg",
 			Description: "favicon",
 			Type:        "string",
 			Access:      model.PUBLIC,
@@ -64,16 +65,23 @@ func InitSettings() {
 			Description: "text type extensions",
 			Group:       model.FRONT,
 		},
+		//{
+		//	Key:         "hide readme file",
+		//	Value:       "true",
+		//	Type:        "bool",
+		//	Description: "hide readme file? ",
+		//	Group:       model.FRONT,
+		//},
 		{
-			Key:         "hide readme file",
-			Value:       "true",
-			Type:        "bool",
-			Description: "hide readme file? ",
+			Key:         "hide files",
+			Value:       "/\\/README.md/i",
+			Type:        "text",
+			Description: "hide files, support RegExp, one per line",
 			Group:       model.FRONT,
 		},
 		{
 			Key:         "music cover",
-			Value:       "https://store.heytapimage.com/cdo-portal/feedback/202110/30/d43c41c5d257c9bc36366e310374fb19.png",
+			Value:       "https://cdn.jsdelivr.net/gh/alist-org/logo@main/circle_center.svg",
 			Description: "music cover image",
 			Type:        "string",
 			Access:      model.PUBLIC,
@@ -157,7 +165,7 @@ func InitSettings() {
 		},
 		{
 			Key:         "WebDAV username",
-			Value:       "alist_admin",
+			Value:       "admin",
 			Description: "WebDAV username",
 			Type:        "string",
 			Access:      model.PRIVATE,
@@ -165,7 +173,7 @@ func InitSettings() {
 		},
 		{
 			Key:         "WebDAV password",
-			Value:       "alist_admin",
+			Value:       utils.RandomStr(8),
 			Description: "WebDAV password",
 			Type:        "string",
 			Access:      model.PRIVATE,
@@ -189,7 +197,7 @@ func InitSettings() {
 		},
 		{
 			Key:         "Visitor WebDAV username",
-			Value:       "alist_visitor",
+			Value:       "guest",
 			Description: "Visitor WebDAV username",
 			Type:        "string",
 			Access:      model.PRIVATE,
@@ -197,7 +205,7 @@ func InitSettings() {
 		},
 		{
 			Key:         "Visitor WebDAV password",
-			Value:       "alist_visitor",
+			Value:       "guest",
 			Description: "Visitor WebDAV password",
 			Type:        "string",
 			Access:      model.PRIVATE,
@@ -235,6 +243,9 @@ func InitSettings() {
 		if err != nil {
 			if err == gorm.ErrRecordNotFound {
 				err = model.SaveSetting(v)
+				if v.Key == "password" {
+					log.Infof("Initial password: %s", v.Value)
+				}
 				if err != nil {
 					log.Fatalf("failed write setting: %s", err.Error())
 				}

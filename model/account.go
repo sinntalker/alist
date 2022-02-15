@@ -2,6 +2,9 @@ package model
 
 import (
 	"github.com/Xhofe/alist/conf"
+	log "github.com/sirupsen/logrus"
+	"strings"
+	"sync"
 	"time"
 )
 
@@ -30,8 +33,9 @@ type Account struct {
 	SiteUrl        string     `json:"site_url"`
 	SiteId         string     `json:"site_id"`
 	InternalType   string     `json:"internal_type"`
-	WebdavProxy    bool       `json:"webdav_proxy"` // 开启之后只会webdav走中转
-	Proxy          bool       `json:"proxy"`        // 是否中转,开启之后web和webdav都会走中转
+	WebdavProxy    bool       `json:"webdav_proxy"`  // 开启之后只会webdav走中转
+	Proxy          bool       `json:"proxy"`         // 是否中转,开启之后web和webdav都会走中转
+	WebdavDirect   bool       `json:"webdav_direct"` // webdav 下载不跳转
 	//AllowProxy     bool       `json:"allow_proxy"` // 是否允许中转下载
 	DownProxyUrl string `json:"down_proxy_url"` // 用于中转下载服务的URL 两处 1. path请求中返回的链接 2. down下载时进行302
 	APIProxyUrl  string `json:"api_proxy_url"`  // 用于中转api的地址
@@ -45,7 +49,9 @@ type Account struct {
 	ExtractFolder string `json:"extract_folder"`
 }
 
-var accountsMap = map[string]Account{}
+var accountsMap = make(map[string]Account)
+
+var balance = ".balance"
 
 // SaveAccount save account to database
 func SaveAccount(account *Account) error {
@@ -100,6 +106,46 @@ func GetAccount(name string) (Account, bool) {
 	return account, ok
 }
 
+func GetAccountsByName(name string) []Account {
+	accounts := make([]Account, 0)
+	if AccountsCount() == 1 {
+		account, _ := GetAccount("")
+		accounts = append(accounts, account)
+		return accounts
+	}
+	for _, v := range accountsMap {
+		if v.Name == name || v.Name == name+balance {
+			accounts = append(accounts, v)
+		}
+	}
+	return accounts
+}
+
+var balanceMap sync.Map
+
+func GetBalancedAccount(name string) (Account, bool) {
+	accounts := GetAccountsByName(name)
+	accountNum := len(accounts)
+	switch accountNum {
+	case 0:
+		return Account{}, false
+	case 1:
+		return accounts[0], true
+	default:
+		cur, ok := balanceMap.Load(name)
+		if ok {
+			i := cur.(int)
+			i = (i + 1) % accountNum
+			balanceMap.Store(name, i)
+			log.Debugln("use: ", i)
+			return accounts[i], true
+		} else {
+			balanceMap.Store(name, 0)
+			return accounts[0], true
+		}
+	}
+}
+
 func GetAccountById(id uint) (*Account, error) {
 	var account Account
 	account.ID = id
@@ -116,6 +162,9 @@ func GetAccountFiles() ([]File, error) {
 		return nil, err
 	}
 	for _, v := range accounts {
+		if strings.HasSuffix(v.Name, balance) {
+			continue
+		}
 		files = append(files, File{
 			Name:      v.Name,
 			Size:      0,

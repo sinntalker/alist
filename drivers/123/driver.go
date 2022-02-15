@@ -12,7 +12,6 @@ import (
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3/s3manager"
-	"github.com/gin-gonic/gin"
 	log "github.com/sirupsen/logrus"
 	"io"
 	"io/ioutil"
@@ -58,6 +57,7 @@ func (driver Pan123) Items() []base.Item {
 			Type:     base.TypeSelect,
 			Values:   "name,fileId,updateAt,createAt",
 			Required: true,
+			Default:  "name",
 		},
 		{
 			Name:     "order_direction",
@@ -65,6 +65,7 @@ func (driver Pan123) Items() []base.Item {
 			Type:     base.TypeSelect,
 			Values:   "asc,desc",
 			Required: true,
+			Default:  "asc",
 		},
 	}
 }
@@ -197,9 +198,9 @@ func (driver Pan123) Path(path string, account *model.Account) (*model.File, []m
 	return nil, files, nil
 }
 
-func (driver Pan123) Proxy(c *gin.Context, account *model.Account) {
-	c.Request.Header.Del("origin")
-}
+//func (driver Pan123) Proxy(r *http.Request, account *model.Account) {
+//	r.Header.Del("origin")
+//}
 
 func (driver Pan123) Preview(path string, account *model.Account) (interface{}, error) {
 	return nil, base.ErrNotSupport

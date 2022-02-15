@@ -2,10 +2,10 @@ package base
 
 import (
 	"github.com/Xhofe/alist/model"
-	"github.com/gin-gonic/gin"
 	"github.com/go-resty/resty/v2"
 	log "github.com/sirupsen/logrus"
 	"net/http"
+	"time"
 )
 
 type DriverConfig struct {
@@ -38,8 +38,8 @@ type Driver interface {
 	Link(args Args, account *model.Account) (*Link, error)
 	// Path 取路径（文件或文件夹）
 	Path(path string, account *model.Account) (*model.File, []model.File, error)
-	// Proxy 代理处理
-	Proxy(c *gin.Context, account *model.Account)
+	// Deprecated Proxy 代理处理
+	//Proxy(r *http.Request, account *model.Account)
 	// Preview 预览
 	Preview(path string, account *model.Account) (interface{}, error)
 	// MakeDir 创建文件夹
@@ -62,6 +62,7 @@ type Item struct {
 	Name        string `json:"name"`
 	Label       string `json:"label"`
 	Type        string `json:"type"`
+	Default     string `json:"default"`
 	Values      string `json:"values"`
 	Required    bool   `json:"required"`
 	Description string `json:"description"`
@@ -84,7 +85,7 @@ func GetDriversMap() map[string]Driver {
 }
 
 func GetDrivers() map[string][]Item {
-	res := make(map[string][]Item, 0)
+	res := make(map[string][]Item)
 	for k, v := range driversMap {
 		if v.Config().OnlyProxy {
 			res[k] = v.Items()
@@ -110,6 +111,13 @@ func GetDrivers() map[string][]Item {
 					Type:        TypeBool,
 					Required:    true,
 					Description: "Transfer the WebDAV of this account through the server",
+				},
+				{
+					Name:        "webdav_direct",
+					Label:       "webdav direct",
+					Type:        TypeBool,
+					Required:    true,
+					Description: "Transfer the WebDAV of this account through the native",
 				},
 			}, v.Items()...)
 		}
@@ -160,6 +168,8 @@ func GetDrivers() map[string][]Item {
 var NoRedirectClient *resty.Client
 var RestyClient = resty.New()
 var HttpClient = &http.Client{}
+var UserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.88 Safari/537.36"
+var DefaultTimeout = time.Second * 20
 
 func init() {
 	NoRedirectClient = resty.New().SetRedirectPolicy(
@@ -167,8 +177,8 @@ func init() {
 			return http.ErrUseLastResponse
 		}),
 	)
-	userAgent := "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.88 Safari/537.36"
-	NoRedirectClient.SetHeader("user-agent", userAgent)
-	RestyClient.SetHeader("user-agent", userAgent)
+	NoRedirectClient.SetHeader("user-agent", UserAgent)
+	RestyClient.SetHeader("user-agent", UserAgent)
 	RestyClient.SetRetryCount(3)
+	RestyClient.SetTimeout(DefaultTimeout)
 }

@@ -5,7 +5,6 @@ import (
 	"github.com/Xhofe/alist/drivers/base"
 	"github.com/Xhofe/alist/model"
 	"github.com/Xhofe/alist/utils"
-	"github.com/gin-gonic/gin"
 	log "github.com/sirupsen/logrus"
 	"path/filepath"
 )
@@ -52,6 +51,7 @@ func (driver Teambition) Items() []base.Item {
 			Type:     base.TypeSelect,
 			Values:   "fileName,fileSize,updated,created",
 			Required: true,
+			Default:  "fileName",
 		},
 		{
 			Name:     "order_direction",
@@ -59,6 +59,7 @@ func (driver Teambition) Items() []base.Item {
 			Type:     base.TypeSelect,
 			Values:   "Asc,Desc",
 			Required: true,
+			Default:  "Asc",
 		},
 	}
 }
@@ -149,9 +150,9 @@ func (driver Teambition) Path(path string, account *model.Account) (*model.File,
 	return nil, files, nil
 }
 
-func (driver Teambition) Proxy(c *gin.Context, account *model.Account) {
-
-}
+//func (driver Teambition) Proxy(r *http.Request, account *model.Account) {
+//
+//}
 
 func (driver Teambition) Preview(path string, account *model.Account) (interface{}, error) {
 	return nil, base.ErrNotSupport

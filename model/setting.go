@@ -97,7 +97,7 @@ func LoadSettings() {
 	favicon, err := GetSettingByKey("favicon")
 	if err == nil {
 		//conf.Favicon = favicon.Value
-		conf.ManageHtml = strings.Replace(conf.RawIndexHtml, "https://store.heytapimage.com/cdo-portal/feedback/202110/30/d43c41c5d257c9bc36366e310374fb19.png", favicon.Value, 1)
+		conf.ManageHtml = strings.Replace(conf.RawIndexHtml, "https://cdn.jsdelivr.net/gh/alist-org/logo@main/logo.svg", favicon.Value, 1)
 	}
 	title, err := GetSettingByKey("title")
 	if err == nil {
@@ -114,7 +114,11 @@ func LoadSettings() {
 	// token
 	adminPassword, err := GetSettingByKey("password")
 	if err == nil {
-		conf.Token = utils.GetMD5Encode(fmt.Sprintf("https://github.com/Xhofe/alist-%s", adminPassword.Value))
+		if adminPassword.Value != "" {
+			conf.Token = utils.GetMD5Encode(fmt.Sprintf("https://github.com/Xhofe/alist-%s", adminPassword.Value))
+		} else {
+			conf.Token = ""
+		}
 	}
 	// load settings
 	for _, key := range conf.LoadSettings {

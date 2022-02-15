@@ -39,7 +39,7 @@ var (
 	ImageTypes  = []string{"jpg", "tiff", "jpeg", "png", "gif", "bmp", "svg", "ico", "swf", "webp"}
 )
 
-var settingsMap = make(map[string]string, 0)
+var settingsMap = make(map[string]string)
 
 func Set(key string, value string) {
 	settingsMap[key] = value
@@ -78,7 +78,7 @@ var (
 		"check parent folder", "check down link", "WebDAV username", "WebDAV password",
 		"Visitor WebDAV username", "Visitor WebDAV password",
 		"default page size", "load type",
-		"ocr api",
+		"ocr api", "favicon",
 	}
 )
 
